@@ -1,0 +1,135 @@
+/* Full screen wrapper - dark background matches the map */
+.map-wrapper {
+  width: 100vw;
+  height: 100vh;
+  background: #0d0d1a;
+  position: relative;
+}
+
+/* Error banner shown when backend is offline */
+.map-error-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  background: rgba(239, 68, 68, 0.85);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
+  backdrop-filter: blur(6px);
+}
+
+/* Remove default focus outline on the map canvas */
+.maplibregl-canvas:focus {
+  outline: none;
+}
+
+/* Dark-theme popup override */
+.maplibregl-popup-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: #0f0f1e !important;
+}
+.maplibregl-popup-close-button {
+  color: rgba(255,255,255,0.5) !important;
+  font-size: 18px !important;
+  right: 8px !important;
+  top: 6px !important;
+}
+
+/* Attribution strip */
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 10, 20, 0.75) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 10px !important;
+}
+.maplibregl-ctrl-attrib a { color: rgba(160, 80, 255, 0.7) !important; }
+
+/* Zoom + compass controls */
+.maplibregl-ctrl-group {
+  background: rgba(15, 15, 30, 0.9) !important;
+  border: 1px solid rgba(100, 50, 200, 0.3) !important;
+}
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+  color: rgba(180, 100, 255, 0.85) !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background: rgba(80, 30, 160, 0.6) !important;
+}
+
+/* ── Optimize Route Button ─────────────────────────── */
+.route-btn {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(124, 58, 237, 0.85);
+  color: #fff;
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  border-radius: 999px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.5);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.route-btn:hover {
+  background: rgba(139, 92, 246, 0.95);
+  box-shadow: 0 6px 32px rgba(124, 58, 237, 0.75);
+  transform: translateX(-50%) translateY(-1px);
+}
+.route-btn--active {
+  background: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 4px 24px rgba(239, 68, 68, 0.5);
+  border-color: rgba(252, 165, 165, 0.4);
+}
+.route-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Route Summary Panel ───────────────────────────── */
+.route-summary {
+  position: absolute;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(10, 10, 25, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-family: system-ui, sans-serif;
+  color: #e2e8f0;
+  min-width: 220px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.route-summary__title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #a78bfa;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding-bottom: 6px;
+}
+.route-summary__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+  opacity: 0.85;
+}
