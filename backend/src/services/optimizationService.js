@@ -14,7 +14,7 @@ const DEPOT = {
 };
 
 // Collection threshold — only plan routes for bins at or above this level
-const COLLECTION_THRESHOLD = 70;
+const COLLECTION_THRESHOLD = 80;
 
 /**
  * Greedy Nearest Neighbor algorithm.
@@ -22,13 +22,19 @@ const COLLECTION_THRESHOLD = 70;
  * Returns ordered array of stops: [depot, bin, bin, ..., depot]
  */
 const optimizeRoute = (bins) => {
-  // Filter to only bins that need collection
+  // Filter to only bins that need collection (80%+)
   const candidates = bins
     .filter(b => b.fill_level >= COLLECTION_THRESHOLD)
     .map(b => ({ ...b, priority_score: calculatePriority(b) }));
 
   if (candidates.length === 0) {
-    return { stops: [DEPOT], totalDistance: 0, message: 'No bins require collection at this time.' };
+    return { 
+      stops: [DEPOT], 
+      totalDistance: 0, 
+      totalDistanceKm: "0.00",
+      durationMinutes: 0,
+      message: 'No bins require collection (all below 80%).' 
+    };
   }
 
   const route = [DEPOT];
@@ -37,7 +43,6 @@ const optimizeRoute = (bins) => {
   let totalDistance = 0;
 
   while (unvisited.length > 0) {
-    // Find nearest unvisited bin from current position
     let nearestIdx = 0;
     let nearestDist = Infinity;
 
@@ -59,13 +64,19 @@ const optimizeRoute = (bins) => {
   totalDistance += haversineDistance(currentPos.lat, currentPos.lng, DEPOT.lat, DEPOT.lng);
   route.push({ ...DEPOT, id: 'depot-return' });
 
+  // Assume avg speed of 18 km/h (5 m/s) in Delhi traffic
+  const avgSpeedMS = 5; 
+  const durationSeconds = totalDistance / avgSpeedMS;
+  const durationMinutes = Math.ceil(durationSeconds / 60);
+
   return {
     depot: DEPOT,
     stops: route,
     totalBins: candidates.length,
-    totalDistance: Math.round(totalDistance), // meters
+    totalDistance: Math.round(totalDistance), 
     totalDistanceKm: (totalDistance / 1000).toFixed(2),
-    message: `Optimized route for ${candidates.length} bin(s) in Sanitation Circle 1`,
+    durationMinutes: durationMinutes,
+    message: `Optimized route for ${candidates.length} critical bin(s) in Sanitation Circle 1`,
   };
 };
 

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Source, Layer, Marker } from 'react-map-gl/maplibre';
+import * as turf from '@turf/turf';
 
 // Fetch road geometry from OSRM public API between each pair of consecutive stops
 const fetchRoadGeometry = async (stops) => {
@@ -23,19 +24,73 @@ const fetchRoadGeometry = async (stops) => {
   };
 };
 
-// Depot icon (truck)
 const DepotIcon = () => (
   <div style={depotIconStyle}>🚛</div>
 );
 
-const RouteOverlay = ({ routeData }) => {
-  const [geometry, setGeometry] = useState(null);
+const RouteOverlay = ({ routeData, isAnimating, onAnimationComplete }) => {
+  const [originalGeometry, setOriginalGeometry] = useState(null);
+  const [displayGeometry, setDisplayGeometry] = useState(null);
+  const [truckPos, setTruckPos] = useState(null);
+  const animationRef = useRef(null);
+  const startTimeRef = useRef(null);
 
   useEffect(() => {
     if (!routeData || routeData.stops.length < 2) return;
-
-    fetchRoadGeometry(routeData.stops).then(setGeometry);
+    fetchRoadGeometry(routeData.stops).then(geo => {
+        setOriginalGeometry(geo);
+        setDisplayGeometry(geo); // initially show all
+    });
   }, [routeData]);
+
+  // Animation logic
+  useEffect(() => {
+    if (isAnimating && originalGeometry) {
+        const line = turf.lineString(originalGeometry.coordinates);
+        const totalDistance = turf.length(line); // in km
+        const durationMs = (routeData.durationMinutes || 1) * 60 * 1000;
+        
+        const animate = (time) => {
+            if (!startTimeRef.current) startTimeRef.current = time;
+            const progress = (time - startTimeRef.current) / durationMs;
+
+            if (progress >= 1) {
+                setTruckPos(originalGeometry.coordinates[originalGeometry.coordinates.length - 1]);
+                setDisplayGeometry(null); // hide path when done
+                if (onAnimationComplete) onAnimationComplete();
+                return;
+            }
+
+            const currentDist = progress * totalDistance;
+            const point = turf.along(line, currentDist);
+            const currentCoords = point.geometry.coordinates;
+            setTruckPos(currentCoords);
+
+            // "Vanishing path" — only show from current point to end
+            try {
+                const endPoint = turf.point(originalGeometry.coordinates[originalGeometry.coordinates.length - 1]);
+                const sliced = turf.lineSlice(point, endPoint, line);
+                setDisplayGeometry(sliced.geometry);
+            } catch (e) {
+                // fall back to original if slice fails at very start/end
+                setDisplayGeometry(originalGeometry);
+            }
+
+            animationRef.current = requestAnimationFrame(animate);
+        };
+
+        animationRef.current = requestAnimationFrame(animate);
+    } else {
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        startTimeRef.current = null;
+        setTruckPos(null);
+        setDisplayGeometry(originalGeometry); // reset to full line when not picking up
+    }
+
+    return () => {
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [isAnimating, originalGeometry, routeData.durationMinutes]);
 
   if (!routeData || routeData.stops.length < 2) return null;
 
@@ -44,8 +99,8 @@ const RouteOverlay = ({ routeData }) => {
   return (
     <>
       {/* Road route line */}
-      {geometry && (
-        <Source id="route" type="geojson" data={{ type: 'Feature', geometry }}>
+      {displayGeometry && (
+        <Source id="route" type="geojson" data={{ type: 'Feature', geometry: displayGeometry }}>
           {/* Outer glow */}
           <Layer
             id="route-glow"
@@ -69,14 +124,14 @@ const RouteOverlay = ({ routeData }) => {
             }}
             layout={{ 'line-join': 'round', 'line-cap': 'round' }}
           />
-          {/* Directional arrows — auto-rotate along road geometry */}
+          {/* Directional arrows */}
           <Layer
             id="route-arrows"
             type="symbol"
             layout={{
               'symbol-placement': 'line',
-              'symbol-spacing': 50,          // tighter spacing for better visibility
-              'text-field': '>',             // using a more standard character
+              'symbol-spacing': 50,
+              'text-field': '>',
               'text-size': 18,
               'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
               'text-rotate': 0,
@@ -91,6 +146,13 @@ const RouteOverlay = ({ routeData }) => {
             }}
           />
         </Source>
+      )}
+
+      {/* Animated Truck Marker */}
+      {truckPos && (
+          <Marker longitude={truckPos[0]} latitude={truckPos[1]} anchor="center">
+            <div style={animatedTruckStyle}>🚛</div>
+          </Marker>
       )}
 
       {/* Direction number badges on each stop */}
@@ -112,23 +174,11 @@ const RouteOverlay = ({ routeData }) => {
   );
 };
 
-const depotIconStyle = {
-  fontSize: '20px',
-  filter: 'drop-shadow(0 0 8px #7c3aed)',
-  cursor: 'default',
-};
-
+const depotIconStyle = { fontSize: '20px', filter: 'drop-shadow(0 0 8px #7c3aed)', cursor: 'default' };
+const animatedTruckStyle = { fontSize: '28px', filter: 'drop-shadow(0 0 12px #a855f7)', zIndex: 50 };
 const stopBadgeStyle = {
-  width: '20px',
-  height: '20px',
-  borderRadius: '50%',
-  color: '#fff',
-  fontSize: '11px',
-  fontWeight: 800,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  border: '2px solid rgba(255,255,255,0.5)',
+  width: '20px', height: '20px', borderRadius: '50%', color: '#fff', fontSize: '11px', fontWeight: 800,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.5)',
   boxShadow: '0 0 8px rgba(124,58,237,0.8)',
 };
 
