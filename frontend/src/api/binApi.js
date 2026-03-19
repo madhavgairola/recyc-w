@@ -17,3 +17,13 @@ export const fetchOptimizedRoute = async () => {
   if (!res.ok) throw new Error('Failed to fetch optimized route');
   return res.json();
 };
+
+export const collectBins = async (ids) => {
+  const res = await fetch(`${API_BASE}/bins/collect`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) throw new Error('Failed to collect bins');
+  return res.json();
+};

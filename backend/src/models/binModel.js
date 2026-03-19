@@ -36,4 +36,15 @@ const updateBinFillLevel = (id, newLevel) => {
   return null;
 };
 
-module.exports = { getAllBins, getBinById, updateBinFillLevel };
+const collectBins = (ids) => {
+  ids.forEach(id => {
+    const bin = getBinById(id);
+    if (bin) {
+      bin.fill_level = 0;
+      bin.last_updated = Date.now();
+    }
+  });
+  return bins;
+};
+
+module.exports = { getAllBins, getBinById, updateBinFillLevel, collectBins };

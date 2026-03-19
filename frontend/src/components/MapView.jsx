@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import BinMarker from './BinMarker';
 import AlertPanel from './AlertPanel';
 import RouteOverlay from './RouteOverlay';
-import { fetchBins, fetchOptimizedRoute } from '../api/binApi';
+import { fetchBins, fetchOptimizedRoute, collectBins } from '../api/binApi';
 import './MapView.css';
 
 const MapView = () => {
@@ -54,11 +54,39 @@ const MapView = () => {
     setIsPickingUp(true);
   };
 
-  const handleAnimationComplete = () => {
+  const handleAnimationComplete = async () => {
     setIsPickingUp(false);
-    // In a real app, we might trigger a backend update to empty the bins here
+    if (!routeData || !routeData.stops) return;
+
+    // Collect bin IDs (excluding depot stops)
+    const binIds = routeData.stops
+      .filter(s => s.id && s.id.startsWith('bin-'))
+      .map(s => s.id);
+
+    if (binIds.length > 0) {
+      try {
+        await collectBins(binIds);
+        // Instant refresh after collection
+        const updated = await fetchBins();
+        setBins(updated);
+      } catch (err) {
+        console.error('Failed to empty bins:', err);
+      }
+    }
     console.log('Pick up complete!');
   };
+
+  // Calculate duration at 30 km/h on the frontend for UI
+  const getEstimatedMinutes = () => {
+    if (!routeData || !routeData.totalDistanceKm) return 0;
+    const dist = parseFloat(routeData.totalDistanceKm);
+    
+    // speed = 30 km/h -> 2 min per km
+    const mins = Math.ceil(dist * 2); 
+    return mins || 1; 
+  };
+
+  const estMins = getEstimatedMinutes();
 
   return (
     <div className="map-wrapper">
@@ -79,7 +107,7 @@ const MapView = () => {
 
         {showRoute && routeData && routeData.totalBins > 0 && !isPickingUp && (
           <button className="pickup-btn" onClick={startPickUp}>
-            ⚡ Start Pick Up ({routeData.durationMinutes || '—'} min)
+            ⚡ Start Pick Up ({estMins} min)
           </button>
         )}
       </div>
@@ -95,7 +123,7 @@ const MapView = () => {
             <span>📍 Distance</span><span>{routeData.totalDistanceKm} km</span>
           </div>
           <div className="route-summary__row">
-            <span>⏳ Est. Time</span><span>{routeData.durationMinutes || '—'} minutes</span>
+            <span>⏳ Est. Time (30km/h)</span><span>{estMins} minutes</span>
           </div>
           {isPickingUp && (
               <div className="route-summary__row" style={{ color: '#a78bfa', fontWeight: 700, marginTop: '8px' }}>
@@ -121,10 +149,10 @@ const MapView = () => {
                 routeData={routeData} 
                 isAnimating={isPickingUp} 
                 onAnimationComplete={handleAnimationComplete}
+                durationMinutes={estMins}
             />
         )}
 
-        {/* Hide target markers that are being picked up? No, keep them visible. */}
         {bins.map(bin => (
           <BinMarker key={bin.id} bin={bin} />
         ))}

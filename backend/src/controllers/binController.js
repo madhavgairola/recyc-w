@@ -53,4 +53,14 @@ const getOptimizedRoute = (req, res) => {
   res.status(200).json(result);
 };
 
-module.exports = { getBins, getCriticalBins, updateBin, getOptimizedRoute };
+// POST /api/bins/collect — resets an array of bin IDs to 0%
+const collectBins = (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids)) {
+    return res.status(400).json({ error: 'Missing ids array' });
+  }
+  const updatedBins = binModel.collectBins(ids);
+  res.status(200).json(updatedBins);
+};
+
+module.exports = { getBins, getCriticalBins, updateBin, getOptimizedRoute, collectBins };

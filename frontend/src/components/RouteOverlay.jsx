@@ -28,7 +28,7 @@ const DepotIcon = () => (
   <div style={depotIconStyle}>🚛</div>
 );
 
-const RouteOverlay = ({ routeData, isAnimating, onAnimationComplete }) => {
+const RouteOverlay = ({ routeData, isAnimating, onAnimationComplete, durationMinutes }) => {
   const [originalGeometry, setOriginalGeometry] = useState(null);
   const [displayGeometry, setDisplayGeometry] = useState(null);
   const [truckPos, setTruckPos] = useState(null);
@@ -48,7 +48,7 @@ const RouteOverlay = ({ routeData, isAnimating, onAnimationComplete }) => {
     if (isAnimating && originalGeometry) {
         const line = turf.lineString(originalGeometry.coordinates);
         const totalDistance = turf.length(line); // in km
-        const durationMs = (routeData.durationMinutes || 1) * 60 * 1000;
+        const durationMs = (durationMinutes || 1) * 60 * 1000;
         
         const animate = (time) => {
             if (!startTimeRef.current) startTimeRef.current = time;
@@ -66,11 +66,11 @@ const RouteOverlay = ({ routeData, isAnimating, onAnimationComplete }) => {
             const currentCoords = point.geometry.coordinates;
             setTruckPos(currentCoords);
 
-            // "Vanishing path" — only show from current point to end
+            // "Vanishing path" — ONLY show the remaining portion (from currentDist to totalDistance)
             try {
-                const endPoint = turf.point(originalGeometry.coordinates[originalGeometry.coordinates.length - 1]);
-                const sliced = turf.lineSlice(point, endPoint, line);
-                setDisplayGeometry(sliced.geometry);
+                // turf.lineSliceAlong(line, startDist, stopDist)
+                const remainingLine = turf.lineSliceAlong(line, currentDist, totalDistance);
+                setDisplayGeometry(remainingLine.geometry);
             } catch (e) {
                 // fall back to original if slice fails at very start/end
                 setDisplayGeometry(originalGeometry);
@@ -90,7 +90,7 @@ const RouteOverlay = ({ routeData, isAnimating, onAnimationComplete }) => {
     return () => {
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isAnimating, originalGeometry, routeData.durationMinutes]);
+  }, [isAnimating, originalGeometry, durationMinutes]);
 
   if (!routeData || routeData.stops.length < 2) return null;
 
