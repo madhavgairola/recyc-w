@@ -74,19 +74,20 @@ const RouteOverlay = ({ routeData }) => {
             id="route-arrows"
             type="symbol"
             layout={{
-              'symbol-placement': 'line',   // place along the line path
-              'symbol-spacing': 80,          // one arrow every 80px
-              'text-field': '▶',
-              'text-size': 14,
-              'text-rotate': 0,              // MapLibre handles rotation automatically
-              'text-keep-upright': false,    // allow flipping for direction
+              'symbol-placement': 'line',
+              'symbol-spacing': 50,          // tighter spacing for better visibility
+              'text-field': '>',             // using a more standard character
+              'text-size': 18,
+              'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+              'text-rotate': 0,
+              'text-keep-upright': false,
               'text-allow-overlap': true,
               'text-ignore-placement': true,
             }}
             paint={{
-              'text-color': '#d8b4fe',       // light purple to match theme
+              'text-color': '#d8b4fe',
               'text-halo-color': '#4c1d95',
-              'text-halo-width': 1,
+              'text-halo-width': 2,
             }}
           />
         </Source>

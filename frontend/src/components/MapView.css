@@ -133,3 +133,20 @@
   margin-bottom: 4px;
   opacity: 0.85;
 }
+
+/* ── Custom Scrollbar for Alert List ──────────────── */
+.alert-list::-webkit-scrollbar {
+  width: 6px;
+}
+.alert-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+.alert-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+.alert-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
